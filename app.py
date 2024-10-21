@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify
+import numpy as np
 from qdrant_client import QdrantClient
 # from qdrant_client.http.models import PointIdsList
 from sentence_transformers import SentenceTransformer
@@ -58,9 +59,16 @@ def search_songs():
     song_description = request.json.get('description')
     top_k = request.json.get('top_k', 5) 
 
-    query_description = f"{song_title} - {song_artist} - {song_category} - {song_description}"
-    embedding = model.encode([query_description])[0]
-    results = qdrant.search(collection_name='songs_collection', query_vector=embedding.tolist(), limit=top_k)
+    # query_description = f"{song_title} - {song_artist} - {song_category} - {song_description}"
+    # embedding = model.encode([query_description])[0]
+
+    title_artist_vector = model.encode(song_title + " " + song_artist)
+    category_vector = model.encode(song_category)
+    description_vector = model.encode(song_description)
+
+    query_vector = np.hstack([title_artist_vector, category_vector, description_vector])
+
+    results = qdrant.search(collection_name='songs_collection_database', query_vector=query_vector.tolist(), limit=top_k)
 
     recommendations = [res.payload for res in results]
  
@@ -83,10 +91,15 @@ def search_songs_in_home():
         song_category = song.get('category')
         song_description = song.get('description')
 
-        query_description = f"{song_title} - {song_artist} - {song_category} - {song_description}"
+        # query_description = f"{song_title} - {song_artist} - {song_category} - {song_description}"
         
-        embedding = model.encode([query_description])[0]
-        embeddings.append(embedding)
+        # embedding = model.encode([query_description])[0]
+        title_artist_vector = model.encode(song_title + " " + song_artist)
+        category_vector = model.encode(song_category)
+        description_vector = model.encode(song_description)
+
+        query_vector = np.hstack([title_artist_vector, category_vector, description_vector])
+        embeddings.append(query_vector)
 
     if embeddings:
         average_embedding = sum(embeddings) / len(embeddings)
@@ -94,7 +107,7 @@ def search_songs_in_home():
         return jsonify({"error": "No embeddings were calculated"}), 400
 
     results = qdrant.search(
-        collection_name='songs_collection',
+        collection_name='songs_collection_database',
         query_vector=average_embedding.tolist(),
         limit=top_k
     )
@@ -117,21 +130,28 @@ def add_song():
     if not all([song_title, song_artist, song_category, song_description]):
         return jsonify({"error": "Missing required fields"}), 400
 
-    description = f"{song_title} - {song_artist} - {song_category} - {song_description}"
-    embedding = model.encode([description])[0]
+    # description = f"{song_title} - {song_artist} - {song_category} - {song_description}"
+    # embedding = model.encode([description])[0]
+
+    title_artist_vector = model.encode(song_title + " " + song_artist)
+    category_vector = model.encode(song_category)
+    description_vector = model.encode(song_description)
+
+    query_vector = np.hstack([title_artist_vector, category_vector, description_vector])
 
     qdrant.upsert(
-        collection_name='songs_collection',
+        collection_name='songs_collection_database',
         points=[
             {
                 'id': song_id, 
-                'vector': embedding.tolist(),
+                'vector': query_vector.tolist(),
                 'payload': {
                     'title': song_title,
                     'artist_name': song_artist,
                     'category_name': song_category,
                     'description': song_description,
-                    'lyrics': ""
+                    'lyrics': "",
+                    'id': str(song_id)
                 }
             }
         ]
@@ -149,7 +169,7 @@ def delete_song():
         return jsonify({"error": "ID is required"}), 400 
 
     qdrant.delete(
-        collection_name='songs_collection',
+        collection_name='songs_collection_database',
         points_selector=[vector_id]
     )
 
@@ -160,7 +180,7 @@ def delete_song():
 @role_required(['admin'])
 def get_all_vectors():
     vectors = qdrant.scroll(
-        collection_name='songs_collection', 
+        collection_name='songs_collection_database', 
         scroll_filter=None,  
         limit=100 
     )

@@ -41,6 +41,9 @@ Please note that Qdrant starts with no encryption or authentication - "This mean
     python app.py
     ```
 6. Check the restfull api to see if it works well
+    • Login to authenticate somebody who is using service, after that let's save access token to use features of service: `http://127.0.0.1:5000/login` 
+    ![Example1](./images//Screenshot%202024-10-16%20171033.png)
+
     • Recommend in search page: `http://127.0.0.1:5000/search` 
     ![Example1](./images/Screenshot%202024-10-11%20140450.png)
 
