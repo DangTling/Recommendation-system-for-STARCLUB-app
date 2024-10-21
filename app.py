@@ -62,7 +62,8 @@ def search_songs():
     # query_description = f"{song_title} - {song_artist} - {song_category} - {song_description}"
     # embedding = model.encode([query_description])[0]
 
-    title_artist_vector = model.encode(song_title + " " + song_artist)
+    title_artist_vector = model.encode(song_title)
+    author_vector = model.encode(song_artist)
     category_vector = model.encode(song_category)
     description_vector = model.encode(song_description)
 
@@ -94,7 +95,8 @@ def search_songs_in_home():
         # query_description = f"{song_title} - {song_artist} - {song_category} - {song_description}"
         
         # embedding = model.encode([query_description])[0]
-        title_artist_vector = model.encode(song_title + " " + song_artist)
+        title_artist_vector = model.encode(song_title)
+        author_vector = model.encode(song_artist)
         category_vector = model.encode(song_category)
         description_vector = model.encode(song_description)
 
@@ -133,7 +135,8 @@ def add_song():
     # description = f"{song_title} - {song_artist} - {song_category} - {song_description}"
     # embedding = model.encode([description])[0]
 
-    title_artist_vector = model.encode(song_title + " " + song_artist)
+    title_artist_vector = model.encode(song_title)
+    author_vector = model.encode(song_artist)
     category_vector = model.encode(song_category)
     description_vector = model.encode(song_description)
 
